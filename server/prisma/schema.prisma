@@ -1,0 +1,91 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ComplaintStatus {
+  PENDING
+  IN_REVIEW
+  ASSIGNED
+  RESOLVED
+  REJECTED
+}
+
+enum SeverityLevel {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IssueType {
+  GARBAGE
+  POTHOLE
+  WATER_LEAK
+  STREETLIGHT
+  DRAINAGE
+  ROAD_DAMAGE
+  UNKNOWN
+}
+
+model Complaint {
+  id                 String                  @id @default(cuid())
+  title              String?
+  description        String?
+  locationText       String
+  latitude           Float?
+  longitude          Float?
+  imageUrl           String
+  imagePublicId      String?
+  issueType          IssueType
+  severity           SeverityLevel
+  status             ComplaintStatus         @default(PENDING)
+  department         String?
+  aiSummary          String?
+  aiConfidence       Float?
+  aiRawJson          Json?
+  reportedByName     String?
+  reportedByEmail    String?
+  verification       ComplaintVerification?
+  auditLogs          ComplaintAuditLog[]
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+
+  @@index([status])
+  @@index([severity])
+  @@index([issueType])
+  @@index([createdAt])
+}
+
+model ComplaintVerification {
+  id                     String   @id @default(cuid())
+  complaintId            String   @unique
+  beforeImageUrl         String
+  afterImageUrl          String
+  afterImagePublicId     String?
+  verificationStatus     String
+  verificationSummary    String?
+  verificationConfidence Float?
+  aiRawJson              Json?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+}
+
+model ComplaintAuditLog {
+  id          String   @id @default(cuid())
+  complaintId String
+  action      String
+  oldValue    Json?
+  newValue    Json?
+  createdAt   DateTime @default(now())
+
+  complaint Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+
+  @@index([complaintId])
+}
