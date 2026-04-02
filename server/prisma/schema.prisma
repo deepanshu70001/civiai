@@ -4,7 +4,6 @@ generator client {
 
 datasource db {
   provider = "postgresql"
-  url      = env("DATABASE_URL")
 }
 
 enum ComplaintStatus {
@@ -20,6 +19,12 @@ enum SeverityLevel {
   MEDIUM
   HIGH
   CRITICAL
+}
+
+enum VerificationStatus {
+  RESOLVED
+  UNRESOLVED
+  UNCLEAR
 }
 
 enum IssueType {
@@ -41,6 +46,7 @@ model Complaint {
   longitude          Float?
   imageUrl           String
   imagePublicId      String?
+  imageMimeType      String?
   issueType          IssueType
   severity           SeverityLevel
   status             ComplaintStatus         @default(PENDING)
@@ -67,7 +73,8 @@ model ComplaintVerification {
   beforeImageUrl         String
   afterImageUrl          String
   afterImagePublicId     String?
-  verificationStatus     String
+  afterImageMimeType     String?
+  verificationStatus     VerificationStatus
   verificationSummary    String?
   verificationConfidence Float?
   aiRawJson              Json?
