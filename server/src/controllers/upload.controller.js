@@ -15,7 +15,8 @@ export async function uploadImage(req, res, next) {
       success: true,
       data: {
         url: result.secure_url,
-        publicId: result.public_id
+        publicId: result.public_id,
+        mimeType: req.file.mimetype
       }
     });
   } catch (error) {

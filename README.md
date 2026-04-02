@@ -7,7 +7,7 @@ CiviAI is an AI-powered civic complaint platform that allows users to upload iss
 - Frontend: React + Vite + Tailwind
 - Backend: Node.js + Express
 - Database: PostgreSQL + Prisma
-- AI: OpenAI Vision
+- AI: Gemini API (Google AI Studio free tier)
 - Image Upload: Cloudinary
 
 ## Project Status
