@@ -1,12 +1,14 @@
 {
-  "name": "civiai",
+  "name": "civiai-root",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
-    "dev": "npm --prefix client run dev",
-    "dev:client": "npm --prefix client run dev",
-    "dev:server": "npm --prefix server run dev",
-    "test": "npm --prefix client run test && npm --prefix server run test",
-    "test:ci": "npm --prefix client run test:ci && npm --prefix server run test",
-    "build": "npm --prefix client run build"
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "start:server": "cd server && npm run dev",
+    "start:client": "cd client && npm run dev",
+    "install:all": "npm install && cd server && npm install && cd ../client && npm install"
+  },
+  "dependencies": {
+    "concurrently": "^8.2.2"
   }
 }

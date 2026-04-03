@@ -199,13 +199,21 @@ export default function OperationsDashboard() {
             </label>
           </div>
 
-          <div className="table-shell enter-up">
+          <div className="table-shell enter-up relative">
             {error && (
-              <div className="px-6 py-4 bg-red-50 text-red-700 text-sm font-semibold">
-                {error}
+              <div className="absolute inset-0 z-20 bg-white/95 backdrop-blur-sm flex flex-col items-center justify-center p-8 text-center text-slate-500 min-h-[400px]">
+                 <span className="material-symbols-outlined text-5xl text-slate-300 mb-4 float-soft">cloud_off</span>
+                 <h3 className="text-lg font-bold text-slate-700 font-headline mb-2">Network Disconnected</h3>
+                 <p className="text-sm max-w-sm mb-6">{error}</p>
+                 <button 
+                  onClick={() => window.location.reload()} 
+                  className="px-6 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold shadow-lg shadow-slate-900/20 hover:scale-105 transition-transform"
+                 >
+                   Retry Connection
+                 </button>
               </div>
             )}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto min-h-[400px]">
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-100/70">
@@ -227,18 +235,21 @@ export default function OperationsDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-200/80">
-                  {isLoading && (
+                  {isLoading && !error && (
                     <tr>
-                      <td className="px-6 py-8 text-sm text-secondary" colSpan={5}>
-                        Loading complaints...
+                      <td colSpan={5} className="py-20 text-center">
+                        <span className="material-symbols-outlined animate-spin text-3xl text-blue-500/50 mb-2">progress_activity</span>
+                        <p className="text-sm text-secondary font-medium">Loading complaints data...</p>
                       </td>
                     </tr>
                   )}
 
-                  {!isLoading && !items.length && (
+                  {!isLoading && !items.length && !error && (
                     <tr>
-                      <td className="px-6 py-8 text-sm text-secondary" colSpan={5}>
-                        No complaints found for current filters.
+                      <td colSpan={5} className="py-20 text-center">
+                         <span className="material-symbols-outlined text-4xl text-slate-300 mb-2">inbox</span>
+                         <h4 className="text-slate-700 font-bold mb-1">No Complaints Found</h4>
+                         <p className="text-sm text-secondary">Try adjusting your filters or checking back later.</p>
                       </td>
                     </tr>
                   )}

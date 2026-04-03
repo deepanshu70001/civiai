@@ -43,3 +43,19 @@ test("upload route enforces max file size", async () => {
   assert.equal(response.body.success, false);
   assert.match(response.body.message, /too large/i);
 });
+
+test("upload route blocks excess requests (rate limit)", async () => {
+  // We don't have access to the exact limit easily from env.js inside the test
+  // but we can just fire lots of requests until we hit a 429.
+  // Rate limit is max 20 requests per window by default.
+  let isRateLimited = false;
+  for (let i = 0; i < 25; i++) {
+    const res = await request(app).post("/api/v1/uploads/image");
+    if (res.status === 429) {
+      isRateLimited = true;
+      break;
+    }
+  }
+
+  assert.ok(isRateLimited, "Expected route to eventually return 429 Too Many Requests");
+});

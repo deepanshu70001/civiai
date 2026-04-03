@@ -46,8 +46,8 @@ test("requireAuth rejects when ADMIN_PASSWORD is missing", async (t) => {
   });
 
   assert.ok(error);
-  assert.equal(error.statusCode, 500);
-  assert.match(error.message, /ADMIN_PASSWORD is missing/i);
+  assert.equal(error.statusCode, 401);
+  assert.match(error.message, /Admin login disabled/i);
 });
 
 test("requireAuth rejects invalid admin password", async (t) => {

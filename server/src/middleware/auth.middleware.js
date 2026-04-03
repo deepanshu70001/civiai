@@ -1,5 +1,6 @@
 import { env } from "../config/env.js";
 import { ApiError } from "../utils/ApiError.js";
+import jwt from "jsonwebtoken";
 
 const KNOWN_ROLES = new Set(["CITIZEN", "WORKER", "ADMIN"]);
 
@@ -11,9 +12,27 @@ function normalizeRole(value) {
 }
 
 export function attachAuthContext(req, res, next) {
+  let role = normalizeRole(req.header("x-user-role"));
+  let adminPassword = req.header("x-admin-password") || "";
+  const authHeader = req.header("Authorization") || "";
+  let token = null;
+
+  if (authHeader.startsWith("Bearer ")) {
+    token = authHeader.split(" ")[1];
+    try {
+      const decoded = jwt.verify(token, env.JWT_SECRET);
+      if (decoded.role === "ADMIN") {
+        role = "ADMIN";
+        adminPassword = env.ADMIN_PASSWORD; // Synthesize a correct password locally
+      }
+    } catch {
+      // invalid token, fallback
+    }
+  }
+
   req.auth = {
-    role: normalizeRole(req.header("x-user-role")),
-    adminPassword: req.header("x-admin-password") || "",
+    role,
+    adminPassword,
     workerName: (req.header("x-worker-name") || "").trim()
   };
   next();
@@ -25,8 +44,9 @@ export function requireAuth(req, res, next) {
   }
 
   if (!env.ADMIN_PASSWORD) {
+    console.error("ADMIN_PASSWORD is missing. Add it to server/.env. Falling back to secure 401.");
     return next(
-      new ApiError(500, "ADMIN_PASSWORD is missing. Add it to server/.env")
+      new ApiError(401, "Server misconfiguration. Admin login disabled.")
     );
   }
 

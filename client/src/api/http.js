@@ -13,7 +13,8 @@ http.interceptors.request.use((config) => {
   const workerName = getWorkerName();
 
   if (adminPassword) {
-    headers["x-admin-password"] = adminPassword;
+    // We reuse adminPassword storage key for backward compatibility, but it holds a JWT now.
+    headers["Authorization"] = `Bearer ${adminPassword}`;
   }
 
   if (role) {

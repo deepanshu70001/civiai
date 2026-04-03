@@ -22,6 +22,10 @@ const ISSUE_TYPES = new Set([
 const SEVERITY_LEVELS = new Set(["LOW", "MEDIUM", "HIGH", "CRITICAL"]);
 const VERIFICATION_STATUSES = new Set(["RESOLVED", "UNRESOLVED", "UNCLEAR"]);
 const WORKER_PROGRESS_ELIGIBLE_STATUSES = new Set(["ASSIGNED", "IN_REVIEW"]);
+const TX_OPTIONS = {
+  maxWait: 15_000,
+  timeout: 30_000
+};
 
 function parseOrThrow(schema, input) {
   const parsed = schema.safeParse(input);
@@ -76,33 +80,36 @@ export async function createComplaint(req, res) {
   const aiSummary = normalizeOptionalText(aiResult?.summary);
   const aiConfidence = normalizeConfidence(aiResult?.confidence);
 
-  const complaint = await prisma.$transaction(async (tx) => {
-    const created = await tx.complaint.create({
-      data: {
-        ...payload,
-        issueType,
-        severity,
-        department,
-        aiSummary,
-        aiConfidence,
-        aiRawJson: aiResult
-      }
-    });
-
-    await tx.complaintAuditLog.create({
-      data: {
-        complaintId: created.id,
-        action: "COMPLAINT_CREATED",
-        newValue: {
-          status: created.status,
-          issueType: created.issueType,
-          severity: created.severity
+  const complaint = await prisma.$transaction(
+    async (tx) => {
+      const created = await tx.complaint.create({
+        data: {
+          ...payload,
+          issueType,
+          severity,
+          department,
+          aiSummary,
+          aiConfidence,
+          aiRawJson: aiResult
         }
-      }
-    });
+      });
 
-    return created;
-  });
+      await tx.complaintAuditLog.create({
+        data: {
+          complaintId: created.id,
+          action: "COMPLAINT_CREATED",
+          newValue: {
+            status: created.status,
+            issueType: created.issueType,
+            severity: created.severity
+          }
+        }
+      });
+
+      return created;
+    },
+    TX_OPTIONS
+  );
 
   res.status(201).json({
     success: true,
@@ -122,14 +129,17 @@ export async function listComplaints(req, res) {
 
   const skip = (page - 1) * limit;
 
-  const [complaints, total] = await prisma.$transaction([
-    prisma.complaint.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip,
-      take: limit
-    }),
-    prisma.complaint.count({ where })
+  const complaintsPromise = prisma.complaint.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    skip,
+    take: limit
+  });
+  const totalPromise = prisma.complaint.count({ where });
+
+  const [complaints, total] = await Promise.all([
+    complaintsPromise,
+    totalPromise
   ]);
 
   res.json({
@@ -193,23 +203,26 @@ export async function updateComplaintStatus(req, res) {
     return;
   }
 
-  const updated = await prisma.$transaction(async (tx) => {
-    const complaint = await tx.complaint.update({
-      where: { id },
-      data: { status }
-    });
+  const updated = await prisma.$transaction(
+    async (tx) => {
+      const complaint = await tx.complaint.update({
+        where: { id },
+        data: { status }
+      });
 
-    await tx.complaintAuditLog.create({
-      data: {
-        complaintId: id,
-        action: "STATUS_UPDATED",
-        oldValue: { status: existing.status },
-        newValue: { status }
-      }
-    });
+      await tx.complaintAuditLog.create({
+        data: {
+          complaintId: id,
+          action: "STATUS_UPDATED",
+          oldValue: { status: existing.status },
+          newValue: { status }
+        }
+      });
 
-    return complaint;
-  });
+      return complaint;
+    },
+    TX_OPTIONS
+  );
 
   res.json({
     success: true,
@@ -251,69 +264,72 @@ export async function verifyComplaintResolution(req, res) {
   const verificationSummary = normalizeOptionalText(aiResult?.summary);
   const verificationConfidence = normalizeConfidence(aiResult?.confidence);
 
-  const result = await prisma.$transaction(async (tx) => {
-    const verification = await tx.complaintVerification.upsert({
-      where: { complaintId: id },
-      create: {
-        complaintId: id,
-        beforeImageUrl: complaint.imageUrl,
-        afterImageUrl: payload.afterImageUrl,
-        afterImagePublicId: payload.afterImagePublicId,
-        afterImageMimeType: payload.afterImageMimeType || "image/jpeg",
-        verificationStatus,
-        verificationSummary,
-        verificationConfidence,
-        aiRawJson: aiResult
-      },
-      update: {
-        beforeImageUrl: complaint.imageUrl,
-        afterImageUrl: payload.afterImageUrl,
-        afterImagePublicId: payload.afterImagePublicId,
-        afterImageMimeType: payload.afterImageMimeType || "image/jpeg",
-        verificationStatus,
-        verificationSummary,
-        verificationConfidence,
-        aiRawJson: aiResult
-      }
-    });
-
-    await tx.complaintAuditLog.create({
-      data: {
-        complaintId: id,
-        action: "VERIFICATION_UPDATED",
-        newValue: {
+  const result = await prisma.$transaction(
+    async (tx) => {
+      const verification = await tx.complaintVerification.upsert({
+        where: { complaintId: id },
+        create: {
+          complaintId: id,
+          beforeImageUrl: complaint.imageUrl,
+          afterImageUrl: payload.afterImageUrl,
+          afterImagePublicId: payload.afterImagePublicId,
+          afterImageMimeType: payload.afterImageMimeType || "image/jpeg",
           verificationStatus,
           verificationSummary,
-          verificationConfidence
+          verificationConfidence,
+          aiRawJson: aiResult
+        },
+        update: {
+          beforeImageUrl: complaint.imageUrl,
+          afterImageUrl: payload.afterImageUrl,
+          afterImagePublicId: payload.afterImagePublicId,
+          afterImageMimeType: payload.afterImageMimeType || "image/jpeg",
+          verificationStatus,
+          verificationSummary,
+          verificationConfidence,
+          aiRawJson: aiResult
         }
-      }
-    });
-
-    let updatedComplaint = null;
-
-    if (verificationStatus === "RESOLVED" && complaint.status !== "RESOLVED") {
-      updatedComplaint = await tx.complaint.update({
-        where: { id },
-        data: { status: "RESOLVED" }
       });
 
       await tx.complaintAuditLog.create({
         data: {
           complaintId: id,
-          action: "STATUS_UPDATED",
-          oldValue: { status: complaint.status },
-          newValue: { status: "RESOLVED" }
+          action: "VERIFICATION_UPDATED",
+          newValue: {
+            verificationStatus,
+            verificationSummary,
+            verificationConfidence
+          }
         }
       });
-    } else {
-      updatedComplaint = await tx.complaint.findUnique({ where: { id } });
-    }
 
-    return {
-      complaint: updatedComplaint,
-      verification
-    };
-  });
+      let updatedComplaint = null;
+
+      if (verificationStatus === "RESOLVED" && complaint.status !== "RESOLVED") {
+        updatedComplaint = await tx.complaint.update({
+          where: { id },
+          data: { status: "RESOLVED" }
+        });
+
+        await tx.complaintAuditLog.create({
+          data: {
+            complaintId: id,
+            action: "STATUS_UPDATED",
+            oldValue: { status: complaint.status },
+            newValue: { status: "RESOLVED" }
+          }
+        });
+      } else {
+        updatedComplaint = await tx.complaint.findUnique({ where: { id } });
+      }
+
+      return {
+        complaint: updatedComplaint,
+        verification
+      };
+    },
+    TX_OPTIONS
+  );
 
   res.json({
     success: true,
@@ -348,48 +364,51 @@ export async function submitWorkerProgress(req, res) {
   const nextStatus = payload.status || complaint.status;
   const workerName = req.auth?.workerName || "Worker";
 
-  const updatedComplaint = await prisma.$transaction(async (tx) => {
-    let currentComplaint = complaint;
+  const updatedComplaint = await prisma.$transaction(
+    async (tx) => {
+      let currentComplaint = complaint;
 
-    if (nextStatus !== complaint.status) {
-      currentComplaint = await tx.complaint.update({
-        where: { id },
-        data: { status: nextStatus },
-        select: { id: true, status: true }
-      });
+      if (nextStatus !== complaint.status) {
+        currentComplaint = await tx.complaint.update({
+          where: { id },
+          data: { status: nextStatus },
+          select: { id: true, status: true }
+        });
+
+        await tx.complaintAuditLog.create({
+          data: {
+            complaintId: id,
+            action: "STATUS_UPDATED",
+            oldValue: { status: complaint.status },
+            newValue: { status: nextStatus, source: "WORKER_PROGRESS" }
+          }
+        });
+      }
 
       await tx.complaintAuditLog.create({
         data: {
           complaintId: id,
-          action: "STATUS_UPDATED",
-          oldValue: { status: complaint.status },
-          newValue: { status: nextStatus, source: "WORKER_PROGRESS" }
+          action: "WORKER_PROGRESS_SUBMITTED",
+          newValue: {
+            workerName,
+            note: payload.progressNote,
+            status: currentComplaint.status
+          }
         }
       });
-    }
 
-    await tx.complaintAuditLog.create({
-      data: {
-        complaintId: id,
-        action: "WORKER_PROGRESS_SUBMITTED",
-        newValue: {
-          workerName,
-          note: payload.progressNote,
-          status: currentComplaint.status
+      return tx.complaint.findUnique({
+        where: { id },
+        include: {
+          verification: true,
+          auditLogs: {
+            orderBy: { createdAt: "desc" }
+          }
         }
-      }
-    });
-
-    return tx.complaint.findUnique({
-      where: { id },
-      include: {
-        verification: true,
-        auditLogs: {
-          orderBy: { createdAt: "desc" }
-        }
-      }
-    });
-  });
+      });
+    },
+    TX_OPTIONS
+  );
 
   res.json({
     success: true,

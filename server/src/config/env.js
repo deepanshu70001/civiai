@@ -29,5 +29,6 @@ export const env = {
     process.env.UPLOAD_RATE_LIMIT_WINDOW_MS,
     60_000
   ),
-  UPLOAD_RATE_LIMIT_MAX: parseInteger(process.env.UPLOAD_RATE_LIMIT_MAX, 20)
+  UPLOAD_RATE_LIMIT_MAX: parseInteger(process.env.UPLOAD_RATE_LIMIT_MAX, 20),
+  JWT_SECRET: process.env.JWT_SECRET || process.env.ADMIN_PASSWORD || "fallback-secret"
 };
