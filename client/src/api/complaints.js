@@ -75,6 +75,12 @@ export async function verifyComplaint(id, input) {
   return payload.data;
 }
 
+export async function submitWorkerProgress(id, input) {
+  const response = await http.post(`/complaints/${id}/progress`, input);
+  const payload = unwrapResponse(response);
+  return payload.data;
+}
+
 export async function fetchImpactOverview(params = {}) {
   const response = await http.get("/insights/overview", { params: cleanParams(params) });
   const payload = unwrapResponse(response);

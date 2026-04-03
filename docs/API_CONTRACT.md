@@ -2,6 +2,23 @@
 
 Base URL (local): `http://localhost:5000/api/v1`
 
+Frontend route mapping note:
+- UI detail route: `/complaint/:id`
+- API detail route: `/complaints/:id`
+
+## Auth (Minimal Role Gating)
+
+Admin actions require both headers when `AUTH_ENABLED=true`:
+- `x-user-role: ADMIN`
+- `x-admin-password: <ADMIN_PASSWORD from server/.env>`
+
+If role is not admin -> `403`.
+If admin password is missing/invalid -> `401`.
+
+Worker progress actions require:
+- `x-user-role: WORKER` (or `ADMIN`)
+- optional `x-worker-name: <display name>` (stored in audit metadata)
+
 ## Health
 
 ### `GET /health`
@@ -21,6 +38,13 @@ Response:
 
 Multipart form-data:
 - `image` (file, required)
+
+Upload guards:
+- MIME whitelist: `image/jpeg`, `image/jpg`, `image/png`, `image/webp`, `image/heic`, `image/heif`
+- Max size controlled by `UPLOAD_MAX_FILE_MB`
+- Rate limiting controlled by:
+  - `UPLOAD_RATE_LIMIT_WINDOW_MS`
+  - `UPLOAD_RATE_LIMIT_MAX`
 
 Response:
 
@@ -130,6 +154,8 @@ Returns complaint details including verification and audit logs.
 
 ### `PATCH /complaints/:id/status`
 
+Auth required: `ADMIN` role + valid `x-admin-password`
+
 Request body:
 
 ```json
@@ -139,6 +165,8 @@ Request body:
 ```
 
 ### `POST /complaints/:id/verify`
+
+Auth required: `ADMIN` role + valid `x-admin-password`
 
 Runs before/after AI verification and upserts complaint verification.
 
@@ -153,6 +181,28 @@ Request body:
 ```
 
 If verification is `RESOLVED`, complaint status is auto-updated to `RESOLVED`.
+
+### `POST /complaints/:id/progress`
+
+Auth required:
+- `WORKER` role, or
+- `ADMIN` role with valid `x-admin-password`
+
+Request body:
+
+```json
+{
+  "progressNote": "Visited location and marked damaged area for repair",
+  "status": "IN_REVIEW"
+}
+```
+
+`status` is optional and can be `ASSIGNED | IN_REVIEW | RESOLVED`.
+
+Behavior:
+- Accepts progress updates only when complaint status is `ASSIGNED` or `IN_REVIEW`.
+- Writes worker progress into audit log (`WORKER_PROGRESS_SUBMITTED`).
+- If `status` changes, also writes a `STATUS_UPDATED` audit entry.
 
 ## Impact Insights
 

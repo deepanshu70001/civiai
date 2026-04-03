@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prisma } from "../lib/prisma.js";
+import { getRuntimeDeps } from "../lib/runtime-deps.js";
 import { ApiError } from "../utils/ApiError.js";
 import { buildImpactInsights } from "../services/insights.service.js";
 
@@ -8,6 +8,7 @@ const insightsQuerySchema = z.object({
 });
 
 export async function getImpactOverview(req, res) {
+  const { prisma } = getRuntimeDeps();
   const parsed = insightsQuerySchema.safeParse(req.query);
 
   if (!parsed.success) {

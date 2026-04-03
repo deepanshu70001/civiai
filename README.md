@@ -1,56 +1,63 @@
 # CiviAI
 
-CiviAI is an AI-assisted civic complaint platform for reporting public issues with image evidence, automatic issue classification, and resolution verification.
+CiviAI is an AI-assisted civic complaint platform for reporting public issues with image evidence, automatic issue classification, admin workflow routing, and resolution verification.
 
-## Tech Stack
+## Stack
 
-- Frontend: React + Vite
+- Frontend: React + Vite + Tailwind CSS
 - Backend: Node.js + Express
 - Database: PostgreSQL + Prisma
-- AI: Gemini API
-- Image Uploads: Cloudinary
+- AI: Gemini (`@google/genai`)
+- Media: Cloudinary
 
-## Current Progress
+## Current Implementation
 
-- Backend foundations are in place (Express app, routing, middleware, env config).
-- Image upload endpoint is implemented (`/api/v1/uploads/image`).
-- AI classification endpoint is implemented (`/api/v1/ai-test/classify`).
-- Complaint lifecycle endpoints are implemented:
-  - Create complaint with AI classification
-  - List complaints with filters and pagination
-  - Get complaint details with verification and audit log
-  - Update complaint status with audit tracking
-  - Verify before/after resolution with AI
-- Prisma schema + migrations exist for complaints, verification, and audit logs.
-- Frontend pages are now wired to backend APIs for reporting, dashboard tracking,
-  detail actions, and admin status control.
-- Impact intelligence layer added:
-  - Hotspot detection
-  - Urgency-priority queue
-  - Resolution/verification performance metrics
-  - Narrative impact summary for pitch/demo storytelling
+- Complaint lifecycle APIs are implemented and wired end-to-end:
+  - create complaint + AI classification
+  - list/filter complaints with pagination
+  - complaint detail with verification/audit timeline
+  - admin status updates and verification actions
+  - impact intelligence summary (`/api/v1/insights/overview`)
+- Frontend active routes are production-wired:
+  - `/` impact center
+  - `/dashboard` operations dashboard
+  - `/queue` admin queue
+  - `/worker` worker taskboard
+  - `/report` report flow
+  - `/complaint/:id` complaint detail
+- Security hardening is in place:
+  - role-based access control with admin-password protection for admin actions
+  - upload MIME whitelist + size limit + rate limiting
+- Testing coverage includes:
+  - frontend lint/build checks
+  - backend unit tests
+  - backend API integration tests for lifecycle endpoints
 
-## Repository Structure
+## Repo Layout
 
 ```txt
 civiai/
   client/   React frontend
   server/   Express + Prisma backend
-  docs/     setup, architecture, API, and deployment docs
+  docs/     setup, architecture, API, testing, deployment, backlog
 ```
 
 ## Quick Start
 
-See `docs/SETUP_GUIDE.md` for local setup.
+Follow [docs/SETUP_GUIDE.md](./docs/SETUP_GUIDE.md).
 
-Root-level convenience commands are available now:
+Root scripts:
 
-- `npm run dev` (starts client dev server)
-- `npm run dev:server` (starts backend dev server)
-- `npm run test` (client lint + backend tests)
+- `npm run dev` -> starts client dev server
+- `npm run dev:server` -> starts backend dev server
+- `npm run test` -> client lint + backend tests
+- `npm run test:ci` -> client lint/build + backend tests
 
-## Quality and Next Steps
+## Documentation Index
 
-- Testing workflow: `docs/TESTING.md`
-- Prioritized backlog from latest audit: `docs/TODO.md`
-- Deploy config: `render.yaml`
+- API contract: [docs/API_CONTRACT.md](./docs/API_CONTRACT.md)
+- Architecture: [docs/ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- Database schema summary: [docs/DB_SCHEMA.md](./docs/DB_SCHEMA.md)
+- Testing: [docs/TESTING.md](./docs/TESTING.md)
+- Deployment: [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
+- Backlog: [docs/TODO.md](./docs/TODO.md)

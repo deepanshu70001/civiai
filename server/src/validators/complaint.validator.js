@@ -63,3 +63,12 @@ export const verifyComplaintSchema = z.object({
   afterImagePublicId: nonEmptyOptionalString,
   afterImageMimeType: nonEmptyOptionalString
 });
+
+export const workerProgressSchema = z.object({
+  progressNote: z.string().trim().min(3).max(1000),
+  status: complaintStatusEnum
+    .refine((value) => value === "ASSIGNED" || value === "IN_REVIEW" || value === "RESOLVED", {
+      message: "status must be ASSIGNED, IN_REVIEW, or RESOLVED"
+    })
+    .optional()
+});

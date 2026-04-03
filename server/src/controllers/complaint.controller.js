@@ -1,14 +1,11 @@
-import { prisma } from "../lib/prisma.js";
-import {
-  classifyComplaintImage,
-  verifyBeforeAfter
-} from "../services/ai.service.js";
+import { getRuntimeDeps } from "../lib/runtime-deps.js";
 import {
   complaintIdParamSchema,
   createComplaintSchema,
   listComplaintsQuerySchema,
   updateStatusSchema,
-  verifyComplaintSchema
+  verifyComplaintSchema,
+  workerProgressSchema
 } from "../validators/complaint.validator.js";
 import { ApiError } from "../utils/ApiError.js";
 
@@ -24,6 +21,7 @@ const ISSUE_TYPES = new Set([
 
 const SEVERITY_LEVELS = new Set(["LOW", "MEDIUM", "HIGH", "CRITICAL"]);
 const VERIFICATION_STATUSES = new Set(["RESOLVED", "UNRESOLVED", "UNCLEAR"]);
+const WORKER_PROGRESS_ELIGIBLE_STATUSES = new Set(["ASSIGNED", "IN_REVIEW"]);
 
 function parseOrThrow(schema, input) {
   const parsed = schema.safeParse(input);
@@ -64,6 +62,7 @@ function normalizeConfidence(value) {
 }
 
 export async function createComplaint(req, res) {
+  const { prisma, classifyComplaintImage } = getRuntimeDeps();
   const payload = parseOrThrow(createComplaintSchema, req.body);
 
   const aiResult = await classifyComplaintImage(
@@ -112,6 +111,7 @@ export async function createComplaint(req, res) {
 }
 
 export async function listComplaints(req, res) {
+  const { prisma } = getRuntimeDeps();
   const query = parseOrThrow(listComplaintsQuerySchema, req.query);
   const { page, limit, status, severity, issueType } = query;
 
@@ -145,6 +145,7 @@ export async function listComplaints(req, res) {
 }
 
 export async function getComplaintById(req, res) {
+  const { prisma } = getRuntimeDeps();
   const { id } = parseOrThrow(complaintIdParamSchema, req.params);
 
   const complaint = await prisma.complaint.findUnique({
@@ -168,6 +169,7 @@ export async function getComplaintById(req, res) {
 }
 
 export async function updateComplaintStatus(req, res) {
+  const { prisma } = getRuntimeDeps();
   const { id } = parseOrThrow(complaintIdParamSchema, req.params);
   const { status } = parseOrThrow(updateStatusSchema, req.body);
 
@@ -216,6 +218,7 @@ export async function updateComplaintStatus(req, res) {
 }
 
 export async function verifyComplaintResolution(req, res) {
+  const { prisma, verifyBeforeAfter } = getRuntimeDeps();
   const { id } = parseOrThrow(complaintIdParamSchema, req.params);
   const payload = parseOrThrow(verifyComplaintSchema, req.body);
 
@@ -315,5 +318,82 @@ export async function verifyComplaintResolution(req, res) {
   res.json({
     success: true,
     data: result
+  });
+}
+
+export async function submitWorkerProgress(req, res) {
+  const { prisma } = getRuntimeDeps();
+  const { id } = parseOrThrow(complaintIdParamSchema, req.params);
+  const payload = parseOrThrow(workerProgressSchema, req.body);
+
+  const complaint = await prisma.complaint.findUnique({
+    where: { id },
+    select: {
+      id: true,
+      status: true
+    }
+  });
+
+  if (!complaint) {
+    throw new ApiError(404, "Complaint not found");
+  }
+
+  if (!WORKER_PROGRESS_ELIGIBLE_STATUSES.has(complaint.status)) {
+    throw new ApiError(
+      400,
+      "Worker progress can only be submitted for ASSIGNED or IN_REVIEW complaints"
+    );
+  }
+
+  const nextStatus = payload.status || complaint.status;
+  const workerName = req.auth?.workerName || "Worker";
+
+  const updatedComplaint = await prisma.$transaction(async (tx) => {
+    let currentComplaint = complaint;
+
+    if (nextStatus !== complaint.status) {
+      currentComplaint = await tx.complaint.update({
+        where: { id },
+        data: { status: nextStatus },
+        select: { id: true, status: true }
+      });
+
+      await tx.complaintAuditLog.create({
+        data: {
+          complaintId: id,
+          action: "STATUS_UPDATED",
+          oldValue: { status: complaint.status },
+          newValue: { status: nextStatus, source: "WORKER_PROGRESS" }
+        }
+      });
+    }
+
+    await tx.complaintAuditLog.create({
+      data: {
+        complaintId: id,
+        action: "WORKER_PROGRESS_SUBMITTED",
+        newValue: {
+          workerName,
+          note: payload.progressNote,
+          status: currentComplaint.status
+        }
+      }
+    });
+
+    return tx.complaint.findUnique({
+      where: { id },
+      include: {
+        verification: true,
+        auditLogs: {
+          orderBy: { createdAt: "desc" }
+        }
+      }
+    });
+  });
+
+  res.json({
+    success: true,
+    data: updatedComplaint,
+    message: "Worker progress submitted"
   });
 }

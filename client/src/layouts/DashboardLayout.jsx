@@ -1,173 +1,220 @@
+import { useCallback, useState } from "react";
 import { NavLink, Outlet } from "react-router-dom";
+import {
+  getAdminPassword,
+  getUserRole,
+  getWorkerName,
+  setAdminPassword,
+  setUserRole,
+  setWorkerName
+} from "../lib/auth";
+
+const ROLE_OPTIONS = ["CITIZEN", "WORKER", "ADMIN"];
+
+function navItemClass(isActive) {
+  const base =
+    "px-4 py-2.5 rounded-xl flex items-center gap-3 transition-all duration-300 border border-transparent";
+  if (isActive) {
+    return `${base} bg-blue-50/90 text-blue-800 font-bold border-blue-100 shadow-sm translate-x-1`;
+  }
+  return `${base} text-slate-600 hover:bg-white/70 hover:border-slate-200`;
+}
+
+function topNavClass(isActive) {
+  const base =
+    "text-[0.72rem] uppercase tracking-[0.18em] font-semibold transition-all duration-300 pb-1";
+  if (isActive) {
+    return `${base} text-blue-800 border-b-2 border-blue-700`;
+  }
+  return `${base} text-slate-500 hover:text-blue-700`;
+}
+
+function mobileNavClass(isActive) {
+  return `flex flex-col items-center gap-1 transition-all ${
+    isActive ? "text-blue-800 font-bold -translate-y-0.5" : "text-slate-500"
+  }`;
+}
 
 export default function DashboardLayout() {
+  const [role, setRole] = useState(() => getUserRole());
+  const [adminPasswordDraft, setAdminPasswordDraft] = useState(() => getAdminPassword());
+  const [workerNameDraft, setWorkerNameDraft] = useState(() => getWorkerName());
+
+  const handleAmbientMove = useCallback((event) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    if (!rect.width || !rect.height) return;
+
+    const x = ((event.clientX - rect.left) / rect.width) * 100;
+    const y = ((event.clientY - rect.top) / rect.height) * 100;
+
+    event.currentTarget.style.setProperty("--civiai-cursor-x", `${Math.max(0, Math.min(100, x))}%`);
+    event.currentTarget.style.setProperty("--civiai-cursor-y", `${Math.max(0, Math.min(100, y))}%`);
+  }, []);
+
+  const resetAmbientMove = useCallback((event) => {
+    event.currentTarget.style.setProperty("--civiai-cursor-x", "50%");
+    event.currentTarget.style.setProperty("--civiai-cursor-y", "24%");
+  }, []);
+
+  function handleRoleChange(nextRole) {
+    setRole(nextRole);
+    setUserRole(nextRole);
+  }
+
+  function handleAdminPasswordBlur() {
+    setAdminPassword(adminPasswordDraft);
+  }
+
+  function handleWorkerNameBlur() {
+    setWorkerName(workerNameDraft);
+  }
+
   return (
-    <div className="bg-background text-on-surface flex min-h-screen overflow-hidden font-body">
-      {/* SideNavBar */}
-      <aside className="hidden lg:flex flex-col h-screen w-64 border-r border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 py-6 px-4 shrink-0">
-        <div className="flex items-center gap-3 px-2 mb-10">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <span className="material-symbols-outlined text-white text-sm">shield</span>
+    <div
+      className="app-canvas bg-background text-on-surface flex min-h-screen overflow-hidden font-body"
+      onMouseMove={handleAmbientMove}
+      onMouseLeave={resetAmbientMove}
+    >
+      <div className="ambient-orb ambient-orb-a" />
+      <div className="ambient-orb ambient-orb-b" />
+      <div className="ambient-orb ambient-orb-c" />
+
+      <aside className="hidden lg:flex flex-col h-screen w-72 premium-card rounded-none border-r border-slate-200/70 py-6 px-4 shrink-0">
+        <div className="flex items-center gap-3 px-2 mb-10 enter-up">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-700 to-blue-500 flex items-center justify-center shadow-lg shadow-blue-500/30">
+            <span className="material-symbols-outlined text-white text-base">shield</span>
           </div>
           <div>
-            <h1 className="text-lg font-black text-slate-900 dark:text-white leading-none font-headline">CiviAI</h1>
-            <p className="text-[0.65rem] uppercase tracking-widest text-slate-500 font-bold mt-1">Digital Diplomat</p>
+            <h1 className="text-lg font-black text-slate-900 leading-none font-headline">CiviAI</h1>
+            <p className="text-[0.62rem] uppercase tracking-[0.18em] text-slate-500 font-bold mt-1">
+              Civic Intelligence
+            </p>
           </div>
         </div>
-        <nav className="flex-1 flex flex-col gap-1">
-          <NavLink
-            to="/"
-            end
-            className={({ isActive }) =>
-              `px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all rounded-lg flex items-center gap-3 ${
-                isActive ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-bold translate-x-1 duration-200" : "text-slate-600 dark:text-slate-400"
-              }`
-            }
-          >
+
+        <nav className="flex-1 flex flex-col gap-2">
+          <NavLink to="/" end className={({ isActive }) => navItemClass(isActive)}>
             <span className="material-symbols-outlined text-[20px]">analytics</span>
-            <span className="text-[0.75rem] uppercase tracking-wider font-semibold">Impact Center</span>
+            <span className="text-[0.74rem] uppercase tracking-[0.14em] font-semibold">
+              Impact Center
+            </span>
           </NavLink>
-          
-          <NavLink
-            to="/dashboard"
-            className={({ isActive }) =>
-              `px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all rounded-lg flex items-center gap-3 ${
-                isActive ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-bold translate-x-1 duration-200" : "text-slate-600 dark:text-slate-400"
-              }`
-            }
-          >
+          <NavLink to="/dashboard" className={({ isActive }) => navItemClass(isActive)}>
             <span className="material-symbols-outlined text-[20px]">dashboard</span>
-            <span className="text-[0.75rem] uppercase tracking-wider font-semibold">Dashboard</span>
+            <span className="text-[0.74rem] uppercase tracking-[0.14em] font-semibold">Dashboard</span>
           </NavLink>
-
-          <NavLink
-            to="/queue"
-            className={({ isActive }) =>
-              `px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all rounded-lg flex items-center gap-3 ${
-                isActive ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-bold translate-x-1 duration-200" : "text-slate-600 dark:text-slate-400"
-              }`
-            }
-          >
+          <NavLink to="/queue" className={({ isActive }) => navItemClass(isActive)}>
             <span className="material-symbols-outlined text-[20px]">admin_panel_settings</span>
-            <span className="text-[0.75rem] uppercase tracking-wider font-semibold">Admin Queue</span>
+            <span className="text-[0.74rem] uppercase tracking-[0.14em] font-semibold">Admin Queue</span>
           </NavLink>
-
-          <NavLink
-            to="/report"
-            className={({ isActive }) =>
-              `px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all rounded-lg flex items-center gap-3 ${
-                isActive ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 font-bold translate-x-1 duration-200" : "text-slate-600 dark:text-slate-400"
-              }`
-            }
-          >
+          <NavLink to="/worker" className={({ isActive }) => navItemClass(isActive)}>
+            <span className="material-symbols-outlined text-[20px]">engineering</span>
+            <span className="text-[0.74rem] uppercase tracking-[0.14em] font-semibold">
+              Worker Tasks
+            </span>
+          </NavLink>
+          <NavLink to="/report" className={({ isActive }) => navItemClass(isActive)}>
             <span className="material-symbols-outlined text-[20px]">add_circle</span>
-            <span className="text-[0.75rem] uppercase tracking-wider font-semibold">Report Issue</span>
+            <span className="text-[0.74rem] uppercase tracking-[0.14em] font-semibold">Report Issue</span>
           </NavLink>
         </nav>
-        <div className="mt-auto flex flex-col gap-1 pt-6 border-t border-slate-200 dark:border-slate-800">
-          <button className="text-slate-600 dark:text-slate-400 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all flex items-center gap-3">
-            <span className="material-symbols-outlined text-[20px]">notifications</span>
-            <span className="text-[0.75rem] uppercase tracking-wider font-semibold">Notifications</span>
-          </button>
-          <button className="text-slate-600 dark:text-slate-400 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-900 transition-all flex items-center gap-3">
-            <span className="material-symbols-outlined text-[20px]">settings</span>
-            <span className="text-[0.75rem] uppercase tracking-wider font-semibold">Settings</span>
-          </button>
-        </div>
       </aside>
 
-      {/* Main Content Canvas */}
       <main className="flex-1 flex flex-col h-screen overflow-hidden">
-        {/* TopNavBar */}
-        <header className="bg-slate-50 dark:bg-slate-950 docked full-width top-0 z-50 sticky">
-          <div className="flex justify-between items-center w-full px-6 py-3 max-w-[1440px] mx-auto">
+        <header className="sticky top-0 z-50 px-4 md:px-6 pt-4 md:pt-5">
+          <div className="glass-panel rounded-2xl px-5 md:px-6 py-3.5 flex justify-between items-center max-w-[1440px] mx-auto">
             <div className="flex items-center gap-8">
-              <span className="lg:hidden text-xl font-black tracking-tight text-slate-900 dark:text-white font-headline">CiviAI</span>
+              <span className="lg:hidden text-xl font-black tracking-tight text-slate-900 font-headline">
+                CiviAI
+              </span>
               <nav className="hidden md:flex gap-6">
-                <NavLink
-                  to="/"
-                  end
-                  className={({ isActive }) =>
-                    `text-[0.75rem] uppercase tracking-wider font-semibold transition-colors duration-200 ${
-                      isActive ? "text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 dark:border-blue-400 pb-1" : "text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300"
-                    }`
-                  }
-                >
+                <NavLink to="/" end className={({ isActive }) => topNavClass(isActive)}>
                   Impact Center
                 </NavLink>
-                <NavLink
-                  to="/dashboard"
-                  className={({ isActive }) =>
-                    `text-[0.75rem] uppercase tracking-wider font-semibold transition-colors duration-200 ${
-                      isActive ? "text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 dark:border-blue-400 pb-1" : "text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300"
-                    }`
-                  }
-                >
+                <NavLink to="/dashboard" className={({ isActive }) => topNavClass(isActive)}>
                   Dashboard
                 </NavLink>
-                <NavLink
-                  to="/queue"
-                  className={({ isActive }) =>
-                    `text-[0.75rem] uppercase tracking-wider font-semibold transition-colors duration-200 ${
-                      isActive ? "text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 dark:border-blue-400 pb-1" : "text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300"
-                    }`
-                  }
-                >
+                <NavLink to="/queue" className={({ isActive }) => topNavClass(isActive)}>
                   Admin Queue
                 </NavLink>
-                <NavLink
-                  to="/report"
-                  className={({ isActive }) =>
-                    `text-[0.75rem] uppercase tracking-wider font-semibold transition-colors duration-200 ${
-                      isActive ? "text-blue-700 dark:text-blue-400 font-bold border-b-2 border-blue-700 dark:border-blue-400 pb-1" : "text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-300"
-                    }`
-                  }
-                >
+                <NavLink to="/worker" className={({ isActive }) => topNavClass(isActive)}>
+                  Worker Tasks
+                </NavLink>
+                <NavLink to="/report" className={({ isActive }) => topNavClass(isActive)}>
                   Report Issue
                 </NavLink>
               </nav>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="relative hidden sm:block">
-                <input className="bg-slate-100 dark:bg-slate-900 border-none rounded-full px-10 py-2 text-sm w-64 focus:ring-2 focus:ring-blue-500" placeholder="Search operations..." type="text"/>
-                <span className="material-symbols-outlined absolute left-3 top-2.5 text-slate-400 text-sm">search</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 rounded-full transition-colors">
-                  <span className="material-symbols-outlined">notifications</span>
-                </button>
-                <button className="p-2 text-slate-600 dark:text-slate-400 hover:bg-slate-200/50 rounded-full transition-colors">
-                  <span className="material-symbols-outlined">settings</span>
-                </button>
-                <img alt="User profile" className="w-8 h-8 rounded-full ml-2 object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCP49n66AwdQ4bUJaSni-3-DzceJlUeZl4A4--DJIFgDUJk0NXt2JS4T0z2YsHEaKawWm2QZp60ubL2BVsSq72uQMWU1iApxdHLmp5A8XpJYRz_MnlYKzr_kN3TFsZTwnIu-474oedYgsI_mm4Rk-vZeiQIzJUuuk4bBkegAli7Ui0FqOyDlpeSyn_3JwFx9v51Z0gr7lfg2UHrdYlp_BIpGy_MFDHKyOAYwYa6Xut0X-rZU9gZJV6xMQJgUS_6brc62h4z0-7S2cM"/>
-              </div>
+
+            <div className="flex items-center gap-3">
+              <label className="flex flex-col gap-1 text-[0.56rem] uppercase tracking-[0.14em] font-semibold text-slate-500">
+                Role
+                <select
+                  className="rounded-lg px-2 py-1.5 text-xs text-slate-700 bg-white/75 border border-slate-200/80"
+                  value={role}
+                  onChange={(event) => handleRoleChange(event.target.value)}
+                >
+                  {ROLE_OPTIONS.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {role === "ADMIN" && (
+                <label className="hidden md:flex flex-col gap-1 text-[0.56rem] uppercase tracking-[0.14em] font-semibold text-slate-500">
+                  Admin Password
+                  <input
+                    className="rounded-lg px-3 py-1.5 text-xs w-48 border border-slate-200/80 bg-white/75"
+                    placeholder="Required for ADMIN actions"
+                    type="password"
+                    value={adminPasswordDraft}
+                    onBlur={handleAdminPasswordBlur}
+                    onChange={(event) => setAdminPasswordDraft(event.target.value)}
+                  />
+                </label>
+              )}
+              {role === "WORKER" && (
+                <label className="hidden md:flex flex-col gap-1 text-[0.56rem] uppercase tracking-[0.14em] font-semibold text-slate-500">
+                  Worker Name
+                  <input
+                    className="rounded-lg px-3 py-1.5 text-xs w-48 border border-slate-200/80 bg-white/75"
+                    placeholder="Used in progress logs"
+                    value={workerNameDraft}
+                    onBlur={handleWorkerNameBlur}
+                    onChange={(event) => setWorkerNameDraft(event.target.value)}
+                  />
+                </label>
+              )}
             </div>
           </div>
         </header>
 
-        {/* Dynamic Page Content */}
-        <div className="flex-1 overflow-hidden relative">
-            <Outlet />
+        <div className="flex-1 overflow-hidden relative pb-20 md:pb-0 page-reveal">
+          <Outlet />
         </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 glass-panel border-t border-outline-variant/10 px-6 py-3 flex justify-between items-center z-[60]">
-        <NavLink to="/dashboard" className={({isActive}) => `flex flex-col items-center gap-1 ${isActive ? "text-blue-700 font-bold" : "text-slate-500"}`}>
+      <nav className="md:hidden fixed bottom-3 left-3 right-3 glass-panel rounded-2xl border border-outline-variant/20 px-6 py-3 flex justify-between items-center z-[60]">
+        <NavLink to="/dashboard" className={({ isActive }) => mobileNavClass(isActive)}>
           <span className="material-symbols-outlined">dashboard</span>
-          <span className="text-[10px] uppercase font-bold tracking-tighter">Dashboard</span>
+          <span className="text-[10px] uppercase font-bold tracking-[0.12em]">Dashboard</span>
         </NavLink>
-        <NavLink to="/" end className={({isActive}) => `flex flex-col items-center gap-1 ${isActive ? "text-blue-700 font-bold" : "text-slate-500"}`}>
+        <NavLink to="/" end className={({ isActive }) => mobileNavClass(isActive)}>
           <span className="material-symbols-outlined">analytics</span>
-          <span className="text-[10px] uppercase font-bold tracking-tighter">Impact</span>
+          <span className="text-[10px] uppercase font-bold tracking-[0.12em]">Impact</span>
         </NavLink>
-        <NavLink to="/queue" className={({isActive}) => `flex flex-col items-center gap-1 ${isActive ? "text-blue-700 font-bold" : "text-slate-500"}`}>
+        <NavLink to="/queue" className={({ isActive }) => mobileNavClass(isActive)}>
           <span className="material-symbols-outlined">admin_panel_settings</span>
-          <span className="text-[10px] uppercase font-bold tracking-tighter">Queue</span>
+          <span className="text-[10px] uppercase font-bold tracking-[0.12em]">Queue</span>
         </NavLink>
-        <NavLink to="/report" className={({isActive}) => `flex flex-col items-center gap-1 ${isActive ? "text-blue-700 font-bold" : "text-slate-500"}`}>
+        <NavLink to="/worker" className={({ isActive }) => mobileNavClass(isActive)}>
+          <span className="material-symbols-outlined">engineering</span>
+          <span className="text-[10px] uppercase font-bold tracking-[0.12em]">Worker</span>
+        </NavLink>
+        <NavLink to="/report" className={({ isActive }) => mobileNavClass(isActive)}>
           <span className="material-symbols-outlined">add_circle</span>
-          <span className="text-[10px] uppercase font-bold tracking-tighter">Report</span>
+          <span className="text-[10px] uppercase font-bold tracking-[0.12em]">Report</span>
         </NavLink>
       </nav>
     </div>

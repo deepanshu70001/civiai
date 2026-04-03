@@ -2,7 +2,7 @@
 
 ## High-Level Components
 
-- `client/`: React + Vite frontend with report, dashboard, detail, and admin pages
+- `client/`: React + Vite + Tailwind frontend with API-wired pages
 - `server/`: Express API with Prisma ORM
 - PostgreSQL: source of truth for complaints, verifications, and audit logs
 - Cloudinary: image storage
@@ -17,7 +17,35 @@
 5. Server persists complaint + AI metadata + audit log in PostgreSQL
 6. Admin/user updates status via `PATCH /api/v1/complaints/:id/status`
 7. Resolution can be verified via `POST /api/v1/complaints/:id/verify`
-8. Impact intelligence can be fetched via `GET /api/v1/insights/overview`
+8. Worker submits on-ground updates via `POST /api/v1/complaints/:id/progress`
+9. Impact intelligence can be fetched via `GET /api/v1/insights/overview`
+
+## Frontend Route Contract
+
+- `/` -> Impact Center
+- `/dashboard` -> Operations dashboard list
+- `/queue` -> Admin queue
+- `/worker` -> Worker taskboard
+- `/report` -> Report issue flow
+- `/complaint/:id` -> Complaint detail view
+
+Note:
+- Frontend detail route is singular (`/complaint/:id`), while backend API resource remains plural (`/api/v1/complaints/:id`).
+
+## Frontend UI Architecture
+
+- Tailwind-first styling system (`tailwind.config.js` + `src/index.css`).
+- One active route implementation set (duplicate legacy pages removed).
+- Shared HTTP client interceptor injects role/auth headers (`x-user-role`, `x-admin-password`, `x-worker-name`).
+
+## Security Layer (Minimal)
+
+- Backend attaches auth context from headers (`x-user-role`, `x-admin-password`, `x-worker-name`).
+- Admin-only endpoints (`status` update + `verify`) require:
+  - valid admin password
+  - `ADMIN` role
+- Worker progress endpoint requires `WORKER` role (or `ADMIN` + password).
+- Upload API is protected by MIME/type guard, max file size, and rate limiter.
 
 ## Data Model Summary
 

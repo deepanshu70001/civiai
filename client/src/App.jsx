@@ -4,7 +4,8 @@ import ImpactCenter from "./pages/ImpactCenter";
 import OperationsDashboard from "./pages/OperationsDashboard";
 import AdminQueue from "./pages/AdminQueue";
 import ReportIssue from "./pages/ReportIssue";
-import ComplaintDetail from "./pages/ComplaintDetail"; // We won't strictly enforce /:id for now but let's wire it if needed
+import ComplaintDetail from "./pages/ComplaintDetail";
+import WorkerTasks from "./pages/WorkerTasks";
 
 export default function App() {
   return (
@@ -14,6 +15,7 @@ export default function App() {
           <Route path="/" element={<ImpactCenter />} />
           <Route path="/dashboard" element={<OperationsDashboard />} />
           <Route path="/queue" element={<AdminQueue />} />
+          <Route path="/worker" element={<WorkerTasks />} />
           <Route path="/report" element={<ReportIssue />} />
           <Route path="/complaint/:id" element={<ComplaintDetail />} />
         </Route>

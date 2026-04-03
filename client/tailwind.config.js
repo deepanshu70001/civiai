@@ -63,9 +63,9 @@ export default {
                 "full": "9999px"
             },
             fontFamily: {
-                "headline": ["Manrope", "sans-serif"],
-                "body": ["Inter", "sans-serif"],
-                "label": ["Inter", "sans-serif"]
+                "headline": ["Sora", "sans-serif"],
+                "body": ["Plus Jakarta Sans", "sans-serif"],
+                "label": ["Plus Jakarta Sans", "sans-serif"]
             }
         },
     },
