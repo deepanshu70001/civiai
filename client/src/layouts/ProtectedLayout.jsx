@@ -11,15 +11,6 @@ function navItemClass(isActive) {
   return `${base} text-slate-600 hover:bg-white/70 hover:border-slate-200`;
 }
 
-function topNavClass(isActive) {
-  const base =
-    "text-[0.72rem] uppercase tracking-[0.18em] font-semibold transition-all duration-300 pb-1";
-  if (isActive) {
-    return `${base} text-blue-800 border-b-2 border-blue-700`;
-  }
-  return `${base} text-slate-500 hover:text-blue-700`;
-}
-
 function mobileNavClass(isActive) {
   return `flex flex-col items-center gap-1 transition-all ${
     isActive ? "text-blue-800 font-bold -translate-y-0.5" : "text-slate-500"

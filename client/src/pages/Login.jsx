@@ -26,7 +26,7 @@ export default function Login() {
         } else {
           setError(res.message || "Invalid admin password.");
         }
-      } catch (err) {
+      } catch {
         setError("Network error. Could not reach the server.");
       }
     } else if (role === "WORKER") {
