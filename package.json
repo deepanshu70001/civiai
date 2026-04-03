@@ -1,0 +1,12 @@
+{
+  "name": "civiai",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix client run dev",
+    "dev:client": "npm --prefix client run dev",
+    "dev:server": "npm --prefix server run dev",
+    "test": "npm --prefix client run test && npm --prefix server run test",
+    "test:ci": "npm --prefix client run test:ci && npm --prefix server run test",
+    "build": "npm --prefix client run build"
+  }
+}

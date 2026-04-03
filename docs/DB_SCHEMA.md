@@ -14,6 +14,7 @@ Fields:
 - longitude
 - imageUrl
 - imagePublicId
+- imageMimeType
 - issueType
 - severity
 - status
@@ -29,5 +30,23 @@ Fields:
 ### ComplaintVerification
 Stores before/after verification results.
 
+Key fields:
+- complaintId (unique)
+- beforeImageUrl
+- afterImageUrl
+- afterImagePublicId
+- afterImageMimeType
+- verificationStatus (RESOLVED | UNRESOLVED | UNCLEAR)
+- verificationSummary
+- verificationConfidence
+- aiRawJson
+
 ### ComplaintAuditLog
 Stores important complaint changes such as status updates.
+
+Key fields:
+- complaintId
+- action
+- oldValue (json)
+- newValue (json)
+- createdAt

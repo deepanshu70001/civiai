@@ -1,15 +1,41 @@
-import { Link, Outlet } from "react-router-dom";
+import { NavLink, Outlet } from "react-router-dom";
 
 export default function AppLayout() {
   return (
-    <div>
-      <nav style={{ padding: "16px", borderBottom: "1px solid #ddd" }}>
-        <Link to="/" style={{ marginRight: "16px" }}>Report</Link>
-        <Link to="/dashboard" style={{ marginRight: "16px" }}>Dashboard</Link>
-        <Link to="/admin">Admin</Link>
-      </nav>
-
-      <main style={{ padding: "24px" }}>
+    <div className="app-shell">
+      <header className="topbar">
+        <div>
+          <p className="eyebrow">Civic Operations Hub</p>
+          <h1 className="brand-title">CiviAI</h1>
+        </div>
+        <nav className="nav-links">
+          <NavLink
+            to="/"
+            className={({ isActive }) =>
+              isActive ? "nav-link nav-link-active" : "nav-link"
+            }
+          >
+            Report
+          </NavLink>
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) =>
+              isActive ? "nav-link nav-link-active" : "nav-link"
+            }
+          >
+            Dashboard
+          </NavLink>
+          <NavLink
+            to="/admin"
+            className={({ isActive }) =>
+              isActive ? "nav-link nav-link-active" : "nav-link"
+            }
+          >
+            Admin
+          </NavLink>
+        </nav>
+      </header>
+      <main className="page-wrap">
         <Outlet />
       </main>
     </div>
