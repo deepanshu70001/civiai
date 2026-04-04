@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { NavLink, Outlet, Navigate } from "react-router-dom";
-import { getUserRole, getAdminPassword } from "../lib/auth";
+import { getUserRole, getAdminPassword, setUserRole, setAdminPassword, setWorkerName } from "../lib/auth";
 
 function navItemClass(isActive) {
   const base =
@@ -93,12 +93,10 @@ export default function ProtectedLayout() {
            
            <button 
              onClick={() => {
-               import("../lib/auth").then(auth => {
-                 auth.setUserRole("CITIZEN");
-                 auth.setAdminPassword("");
-                 auth.setWorkerName("");
-                 window.location.href = "/";
-               });
+               setUserRole("CITIZEN");
+               setAdminPassword("");
+               setWorkerName("");
+               window.location.href = "/";
              }}
              className="w-full py-2 mt-2 border border-slate-200 text-slate-600 bg-white hover:bg-slate-100 hover:text-slate-800 rounded-lg text-xs font-bold transition-colors flex justify-center items-center gap-2"
            >
@@ -116,12 +114,10 @@ export default function ProtectedLayout() {
              </span>
              <button
                onClick={() => {
-                 import("../lib/auth").then(auth => {
-                   auth.setUserRole("CITIZEN");
-                   auth.setAdminPassword("");
-                   auth.setWorkerName("");
-                   window.location.href = "/";
-                 });
+                 setUserRole("CITIZEN");
+                 setAdminPassword("");
+                 setWorkerName("");
+                 window.location.href = "/";
                }}
                className="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-100 text-slate-600 hover:bg-amber-100 hover:text-amber-800 transition-colors"
                title="Log Out"
