@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import exifr from "exifr";
 import { createComplaint, getErrorMessage, uploadImage } from "../api/complaints";
+import { LocateFixed } from "lucide-react";
 
 const defaultForm = {
   locationText: "",
@@ -215,7 +216,7 @@ export default function ReportIssue() {
                   disabled={isDetecting}
                   className="text-xs font-bold px-3 py-1.5 bg-blue-50/80 border border-blue-200 text-blue-700 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-1.5 disabled:opacity-50"
                 >
-                  <span className="material-symbols-outlined text-[14px]">my_location</span>
+                  <LocateFixed size={16} />
                   {isDetecting ? "Detecting..." : "Detect Location"}
                 </button>
               </div>
